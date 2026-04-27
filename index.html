@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Стратег КИОР — Шахматная платформа ЦИМ ЗПМ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a1628;color:#e8f0fe;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+header{background:linear-gradient(135deg,#0d1f3c 0%,#1a3a6b 100%);padding:14px 24px;border-bottom:1px solid #1e3a6e;display:flex;align-items:center;justify-content:space-between}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo-badge{background:#1e4db7;border:1px solid #3a6fd8;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;color:#90b8f8;letter-spacing:0.08em;text-transform:uppercase}
+.logo-title{font-family:'Playfair Display',serif;font-size:18px;color:#e8f0fe}
+.logo-title span{color:#4d9de0}
+.header-meta{font-size:11px;color:#5a7faa;text-align:right}
+.header-meta strong{color:#90b8f8;display:block;font-size:12px}
+.main{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:200px;background:#0d1f3c;border-right:1px solid #1e3a6e;padding:16px 12px;flex-shrink:0}
+.sidebar-right{width:200px;background:#0d1f3c;border-left:1px solid #1e3a6e;padding:16px 12px;flex-shrink:0}
+.sec-label{font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:#3a5f8a;margin-bottom:8px;border-bottom:1px solid #1e3a6e;padding-bottom:5px}
+.player-card{background:#0f2441;border:1px solid #1e3a6e;border-radius:6px;padding:10px;margin-bottom:10px}
+.player-org{font-size:9px;color:#4d9de0;text-transform:uppercase;letter-spacing:0.1em}
+.player-name{font-size:12px;color:#e8f0fe;font-weight:500;margin-top:2px}
+.player-role{font-size:10px;color:#5a7faa;margin-top:1px}
+.player-timer{font-size:18px;font-weight:600;color:#e8f0fe;margin-top:6px;font-variant-numeric:tabular-nums}
+.timer-active .player-timer{color:#4d9de0}
+.timer-low .player-timer{color:#e05c5c}
+.cap-pieces{font-size:14px;margin-top:4px;min-height:18px;letter-spacing:-2px}
+.mat-score{font-size:10px;color:#5a7faa;margin-top:2px}
+.mode-opt{padding:8px 10px;border:1px solid #1e3a6e;border-radius:5px;cursor:pointer;margin-bottom:6px;transition:all 0.2s}
+.mode-opt:hover,.mode-opt.active{border-color:#1e4db7;background:#0f2441}
+.mode-opt .m-title{font-size:11px;color:#90b8f8;font-weight:500}
+.mode-opt .m-sub{font-size:10px;color:#3a5f8a;margin-top:1px}
+.diff-select{width:100%;background:#0f2441;border:1px solid #1e3a6e;color:#90b8f8;font-size:11px;padding:6px 8px;border-radius:4px;font-family:'Inter',sans-serif;margin-bottom:8px;cursor:pointer}
+.diff-select:focus{outline:none;border-color:#1e4db7}
+.time-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.time-btn{padding:4px 8px;font-size:10px;border:1px solid #1e3a6e;background:transparent;color:#5a7faa;cursor:pointer;border-radius:3px;font-family:'Inter',sans-serif;transition:all 0.2s}
+.time-btn:hover,.time-btn.active{border-color:#1e4db7;color:#90b8f8;background:#0f2441}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 12px;background:#0a1628}
+#board{display:grid;grid-template-columns:repeat(8,1fr);width:456px;height:456px;border:2px solid #1e4db7;border-radius:3px;overflow:hidden;box-shadow:0 0 40px rgba(30,77,183,0.2),0 0 80px rgba(30,77,183,0.08)}
+.sq{width:57px;height:57px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background 0.1s}
+.sq.light{background:#e8f0fe}
+.sq.dark{background:#3a6fd8}
+.sq.selected{background:#4d9de0 !important;box-shadow:inset 0 0 0 3px rgba(0,0,0,0.25)}
+.sq.move-hint::after{content:'';position:absolute;width:33%;height:33%;border-radius:50%;background:rgba(10,22,40,0.3);pointer-events:none;z-index:2}
+.sq.capture-hint{box-shadow:inset 0 0 0 4px rgba(10,22,40,0.3)}
+.sq.last-move{background:#7bc8f6 !important}
+.sq.last-move.dark{background:#2a7ec8 !important}
+.sq.check{background:#e05c5c !important}
+.piece{font-size:38px;line-height:1;z-index:1;pointer-events:none;user-select:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4))}
+.eval-wrap{display:flex;flex-direction:column;align-items:center;margin-right:8px}
+.eval-bar{width:14px;height:456px;background:#0d1f3c;border-radius:3px;overflow:hidden;border:1px solid #1e3a6e}
+.eval-fill{width:100%;background:#90b8f8;transition:height 0.5s ease}
+.eval-label{font-size:9px;color:#3a5f8a;text-align:center;margin-top:3px}
+.coord-left{display:flex;flex-direction:column;justify-content:space-around;width:18px;height:456px}
+.coord{font-size:10px;color:#3a5f8a;text-align:center}
+.status-bar{text-align:center;margin-top:10px;font-size:12px;color:#5a7faa;height:18px}
+.status-bar.check{color:#e05c5c}
+.status-bar.end{color:#4d9de0;font-weight:600}
+.signal-strip{display:flex;gap:6px;margin-top:8px;max-width:456px;flex-wrap:wrap;justify-content:center}
+.signal{padding:4px 10px;border-radius:12px;font-size:10px;font-weight:500;border:1px solid transparent}
+.signal.green{background:#0d2a1f;border-color:#1a5c38;color:#4dbb7a}
+.signal.yellow{background:#2a2000;border-color:#6b5500;color:#f0c050}
+.signal.red{background:#2a0a0a;border-color:#6b1515;color:#e05c5c}
+.controls{display:flex;gap:8px;margin-top:10px;justify-content:center}
+.ctrl-btn{padding:7px 16px;font-size:11px;font-family:'Inter',sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;border:1px solid #1e3a6e;background:transparent;color:#5a7faa;cursor:pointer;border-radius:4px;transition:all 0.2s}
+.ctrl-btn:hover{border-color:#1e4db7;color:#90b8f8}
+.ctrl-btn.primary{background:#1e4db7;border-color:#3a6fd8;color:#e8f0fe}
+.ctrl-btn.primary:hover{background:#2a5fd0}
+.ctrl-btn.danger:hover{border-color:#e05c5c;color:#e05c5c}
+.tabs{display:flex;margin-bottom:10px;border:1px solid #1e3a6e;border-radius:4px;overflow:hidden}
+.tab{flex:1;padding:5px;font-size:9px;text-align:center;cursor:pointer;color:#3a5f8a;text-transform:uppercase;letter-spacing:0.1em;transition:all 0.2s}
+.tab.active{background:#1e3a6e;color:#90b8f8}
+.panel{display:none}
+.panel.active{display:block}
+.move-log{max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#1e3a6e transparent}
+.mv-pair{display:grid;grid-template-columns:24px 1fr 1fr;gap:3px;padding:2px 0;font-size:11px;border-bottom:1px solid #0d1f3c}
+.mv-num{color:#3a5f8a}
+.mv-san{padding:2px 4px;border-radius:2px;cursor:pointer;transition:background 0.15s}
+.mv-san:hover{background:#0f2441;color:#e8f0fe}
+.mv-san.cur{background:#1e3a6e;color:#4d9de0}
+.ai-card{background:#0f2441;border:1px solid #1e3a6e;border-radius:5px;padding:8px;margin-bottom:8px}
+.ai-card .lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#3a5f8a;margin-bottom:3px}
+.ai-card .val{font-size:11px;color:#90b8f8}
+.opening-name{font-size:10px;color:#4d9de0;font-style:italic;text-align:center;margin-top:5px;min-height:14px}
+.promo-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,22,40,0.85);z-index:100;align-items:center;justify-content:center}
+.promo-overlay.active{display:flex}
+.promo-box{background:#0d1f3c;border:1px solid #1e4db7;border-radius:10px;padding:24px;text-align:center;box-shadow:0 0 40px rgba(30,77,183,0.4)}
+.promo-box h3{font-size:14px;color:#90b8f8;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em}
+.promo-pieces{display:flex;gap:12px;justify-content:center}
+.promo-piece{font-size:48px;cursor:pointer;border:2px solid transparent;border-radius:8px;padding:4px;transition:all 0.2s;line-height:1}
+.promo-piece:hover{border-color:#4d9de0;background:#0f2441}
+.board-area{display:flex;align-items:center}
+.flip-btn{font-size:10px;font-family:'Inter',sans-serif;border:1px solid #1e3a6e;background:transparent;color:#3a5f8a;cursor:pointer;border-radius:3px;padding:3px 8px;margin-top:6px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.06em}
+.flip-btn:hover{color:#90b8f8;border-color:#1e4db7}
+.kior-insight{background:#0d1f3c;border:1px solid #1e3a6e;border-left:3px solid #4d9de0;border-radius:4px;padding:8px;margin-top:8px;font-size:10px;color:#5a7faa;line-height:1.5}
+.kior-insight strong{color:#4d9de0;display:block;margin-bottom:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-area">
+    <div class="logo-badge">ЦИМ ЗПМ</div>
+    <div class="logo-title">Стратег <span>КИОР</span></div>
+  </div>
+  <div class="header-meta">
+    <strong>Smart Data Ukimet · Аналитический слой</strong>
+    Министерство культуры и информации РК
+  </div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sec-label">Режим игры</div>
+    <div class="mode-opt active" data-mode="ai" onclick="setMode('ai')">
+      <div class="m-title">🤖 vs Система</div><div class="m-sub">Движок НПИИ/H200</div>
+    </div>
+    <div class="mode-opt" data-mode="local" onclick="setMode('local')">
+      <div class="m-title">👥 vs Коллега</div><div class="m-sub">Локальный 2P</div>
+    </div>
+    <div class="sec-label" style="margin-top:10px">Уровень ИИ</div>
+    <select class="diff-select" id="diffSelect" onchange="updateDepthSel(this.value)">
+      <option value="1">1 — Стажёр</option>
+      <option value="2">2 — Аналитик</option>
+      <option value="3" selected>3 — Эксперт КИОР</option>
+      <option value="4">4 — Зам. Премьера</option>
+    </select>
+    <div class="sec-label">Контроль времени</div>
+    <div class="time-btns">
+      <button class="time-btn" onclick="setTime(0)">∞</button>
+      <button class="time-btn" onclick="setTime(180)">3м</button>
+      <button class="time-btn active" onclick="setTime(600)">10м</button>
+      <button class="time-btn" onclick="setTime(1800)">30м</button>
+    </div>
+    <div class="sec-label" style="margin-top:8px">Игроки</div>
+    <div id="p2card" class="player-card">
+      <div class="player-org" id="p2org">НПИИ · H200</div>
+      <div class="player-name" id="p2name">Система SDU</div>
+      <div class="player-role" id="p2role">Аналитический движок</div>
+      <div class="cap-pieces" id="cap2"></div>
+      <div class="mat-score" id="diff2"></div>
+      <div class="player-timer" id="timer2">10:00</div>
+    </div>
+    <div id="p1card" class="player-card">
+      <div class="player-org" id="p1org">МКИ РК · КИОР</div>
+      <div class="player-name" id="p1name">Эксперт</div>
+      <div class="player-role" id="p1role">Стратегический уровень</div>
+      <div class="cap-pieces" id="cap1"></div>
+      <div class="mat-score" id="diff1"></div>
+      <div class="player-timer" id="timer1">10:00</div>
+    </div>
+  </div>
+  <div class="center">
+    <div class="board-area">
+      <div class="eval-wrap">
+        <div class="eval-bar" id="evalBar"><div class="eval-fill" id="evalFill" style="height:50%"></div></div>
+        <div class="eval-label" id="evalText">0.0</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="display:flex;width:456px;margin-bottom:2px" id="coordTop"></div>
+        <div style="display:flex">
+          <div class="coord-left" id="coordLeft"></div>
+          <div id="board"></div>
+          <div class="coord-left" id="coordRight"></div>
+        </div>
+        <div style="display:flex;width:456px" id="coordBot"></div>
+        <button class="flip-btn" onclick="flipBoard()">⇅ Перевернуть</button>
+      </div>
+    </div>
+    <div class="status-bar" id="statusBar">Белые ходят</div>
+    <div class="opening-name" id="openingName"></div>
+    <div class="signal-strip" id="signalStrip">
+      <div class="signal green">ИДВ: 72 ▲</div>
+      <div class="signal green">eOtinish: норма</div>
+      <div class="signal yellow">Медиа: внимание</div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" onclick="undoMove()">← Отмена</button>
+      <button class="ctrl-btn primary" onclick="newGame()">Новая игра</button>
+      <button class="ctrl-btn danger" onclick="resign()">Сдаться</button>
+    </div>
+  </div>
+  <div class="sidebar-right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('moves')">Ходы</div>
+      <div class="tab" onclick="switchTab('analysis')">Анализ</div>
+    </div>
+    <div class="panel active" id="panel-moves">
+      <div class="sec-label">История ходов</div>
+      <div class="move-log" id="moveLog"></div>
+    </div>
+    <div class="panel" id="panel-analysis">
+      <div class="sec-label">Аналитика SDU</div>
+      <div class="ai-card"><div class="lbl">Оценка позиции</div><div class="val" id="evalDisp">0.0 — равновесие</div></div>
+      <div class="ai-card"><div class="lbl">Лучший ход</div><div class="val" id="bestLine">—</div></div>
+      <div class="ai-card"><div class="lbl">Фаза игры</div><div class="val" id="posType">Дебют</div></div>
+      <div class="kior-insight" id="kiorInsight"><strong>КИОР-интерпретация</strong>Позиция в норме. Продолжайте стратегическое развитие фигур.</div>
+    </div>
+  </div>
+</div>
+<div class="promo-overlay" id="promoOverlay">
+  <div class="promo-box"><h3>Повышение пешки</h3><div class="promo-pieces" id="promoPieces"></div></div>
+</div>
+<script>
+const PIECES={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
+const PV={P:1,N:3,B:3,R:5,Q:9,K:0};
+const OPENINGS={'e4':'Дебют королевской пешки','d4':'Ферзевой дебют','e4 e5':'Открытая игра','e4 c5':'Сицилианская защита','e4 e6':'Французская защита','e4 c6':'Защита Каро-Канн','d4 d5':'Закрытая игра','d4 Nf6':'Индийская защита','e4 e5 Nf3 Nc6 Bb5':'Испанская партия','e4 e5 Nf3 Nc6 Bc4':'Итальянская партия','d4 d5 c4':'Ферзевый гамбит'};
+const KIOR_MSGS={opening:['Дебютная фаза: собираем базовые индикаторы.','Начальный мониторинг: ситуация стабильна.','Ранние сигналы: отклонений нет.'],middle:['Миттельшпиль: ключевые KPI под давлением.','Интенсивный мониторинг активирован.','EWS-система отслеживает динамику.'],end:['Эндшпиль: финальный этап анализа.','Предиктивная модель: горизонт 6-8 недель.','Сценарный анализ А/Б/В запущен.'],check:['⚠️ АЛЕРТ: критическое отклонение!','EWS-уведомление: требуется реакция.','Индекс напряжённости превысил порог.']};
+let board=[],selected=null,currentTurn='w',moves=[],captured={w:[],b:[]},lastMove=null,flipped=false,gameOver=false,aiDepth=3,gameMode='ai',enPassant=null,castleRights={wK:true,wQ:true,bK:true,bQ:true},timers={w:600,b:600},timerOn=false,timerInterval=null,timeControl=600,promoCallback=null;
+function initBoard(){const s=[['bR','bN','bB','bQ','bK','bB','bN','bR'],['bP','bP','bP','bP','bP','bP','bP','bP'],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],['wP','wP','wP','wP','wP','wP','wP','wP'],['wR','wN','wB','wQ','wK','wB','wN','wR']];board=s.map(r=>[...r]);selected=null;currentTurn='w';moves=[];captured={w:[],b:[]};lastMove=null;gameOver=false;enPassant=null;castleRights={wK:true,wQ:true,bK:true,bQ:true};timers={w:timeControl,b:timeControl};stopTimer();timerOn=false;renderBoard();renderMoves();updateStatus();updateTimers();updateEval(0);['cap1','cap2','diff1','diff2'].forEach(id=>document.getElementById(id).textContent='');document.getElementById('openingName').textContent='';document.getElementById('bestLine').textContent='—';document.getElementById('posType').textContent='Дебют';setKiorInsight('opening');updateSignals(0);}
+function newGame(){initBoard();}
+function flipBoard(){flipped=!flipped;renderBoard();}
+function renderBoard(){const b=document.getElementById('board');b.innerHTML='';for(let r=0;r<8;r++)for(let c=0;c<8;c++){const dr=flipped?7-r:r,dc=flipped?7-c:c;const sq=document.createElement('div');sq.className='sq '+((dr+dc)%2===0?'light':'dark');sq.dataset.r=dr;sq.dataset.c=dc;if(lastMove&&((dr===lastMove.fr&&dc===lastMove.fc)||(dr===lastMove.tr&&dc===lastMove.tc)))sq.classList.add('last-move');const p=board[dr][dc];if(p){const pd=document.createElement('div');pd.className='piece';pd.textContent=PIECES[p];sq.appendChild(pd);}sq.addEventListener('click',()=>onSquareClick(dr,dc));b.appendChild(sq);}renderCoords();if(selected)highlightSelected();}
+function renderCoords(){const ranks=flipped?['1','2','3','4','5','6','7','8']:['8','7','6','5','4','3','2','1'];const files=flipped?['h','g','f','e','d','c','b','a']:['a','b','c','d','e','f','g','h'];document.getElementById('coordLeft').innerHTML=ranks.map(r=>`<div class="coord" style="height:57px;line-height:57px">${r}</div>`).join('');document.getElementById('coordRight').innerHTML=ranks.map(r=>`<div class="coord" style="height:57px;line-height:57px">${r}</div>`).join('');document.getElementById('coordTop').innerHTML=files.map(f=>`<div style="width:57px;text-align:center;font-size:10px;color:#3a5f8a">${f}</div>`).join('');document.getElementById('coordBot').innerHTML=files.map(f=>`<div style="width:57px;text-align:center;font-size:10px;color:#3a5f8a">${f}</div>`).join('');}
+function onSquareClick(r,c){if(gameOver)return;if(gameMode==='ai'&&currentTurn==='b')return;const p=board[r][c];if(selected===null){if(p&&p[0]===currentTurn){selected={r,c};highlightSelected();}}else{if(p&&p[0]===currentTurn){selected={r,c};highlightSelected();return;}const lm=getLegalMoves(selected.r,selected.c);const mv=lm.find(m=>m.tr===r&&m.tc===c);if(mv)doMove(mv);else{selected=null;renderBoard();}}}
+function highlightSelected(){renderBoard();const sq=getSq(selected.r,selected.c);if(sq)sq.classList.add('selected');getLegalMoves(selected.r,selected.c).forEach(m=>{const s=getSq(m.tr,m.tc);if(s){if(board[m.tr][m.tc])s.classList.add('capture-hint');else s.classList.add('move-hint');}});}
+function getSq(r,c){return document.getElementById('board').querySelector(`[data-r="${r}"][data-c="${c}"]`);}
+function doMove(mv,fromAI){const piece=board[mv.fr][mv.fc];const cp=board[mv.tr][mv.tc];if(cp)captured[currentTurn].push(cp[1]);if(mv.enPassant){const cr=currentTurn==='w'?mv.tr+1:mv.tr-1;captured[currentTurn].push('P');board[cr][mv.tc]=null;}board[mv.tr][mv.tc]=piece;board[mv.fr][mv.fc]=null;if(mv.castle==='K'){board[mv.fr][7]=null;board[mv.fr][5]=currentTurn+'R';}if(mv.castle==='Q'){board[mv.fr][0]=null;board[mv.fr][3]=currentTurn+'R';}const pt=piece[1];if(pt==='K'){castleRights[currentTurn+'K']=false;castleRights[currentTurn+'Q']=false;}if(pt==='R'&&mv.fc===7)castleRights[currentTurn+'K']=false;if(pt==='R'&&mv.fc===0)castleRights[currentTurn+'Q']=false;enPassant=null;if(pt==='P'&&Math.abs(mv.tr-mv.fr)===2)enPassant={r:(mv.fr+mv.tr)/2,c:mv.tc};if(mv.promo){if(fromAI||mv.promoTo){board[mv.tr][mv.tc]=currentTurn+(mv.promoTo||'Q');finishMove(mv,piece,fromAI);}else{showPromo(mv.tr,mv.tc,promo=>{board[mv.tr][mv.tc]=currentTurn+promo;mv.promoTo=promo;finishMove(mv,piece,false);});return;}}else finishMove(mv,piece,fromAI);}
+function finishMove(mv,piece,fromAI){lastMove=mv;const san=buildSAN(mv,piece);moves.push({san,color:currentTurn,mv});selected=null;currentTurn=currentTurn==='w'?'b':'w';if(timeControl>0&&moves.length>0){timerOn=true;stopTimer();startTimer();}renderBoard();renderMoves();updateCaptured();updateStatus();const inCheck=isInCheck(currentTurn,board,castleRights);const hasL=hasAnyLegal(currentTurn);if(!hasL){gameOver=true;stopTimer();if(inCheck)setStatus(`Мат! ${currentTurn==='w'?'Чёрные':'Белые'} победили!`,'end');else setStatus('Пат! Ничья.','end');return;}if(inCheck)setKiorInsight('check');else setKiorInsight(moves.length<15?'opening':moves.length<35?'middle':'end');updateEvalAsync();if(gameMode==='ai'&&currentTurn==='b'&&!gameOver)setTimeout(()=>aiMove(),300);}
+function showPromo(r,c,cb){const ol=document.getElementById('promoOverlay'),pp=document.getElementById('promoPieces'),co=currentTurn;pp.innerHTML=['Q','R','B','N'].map(p=>`<div class="promo-piece" onclick="selPromo('${p}')">${PIECES[co+p]}</div>`).join('');promoCallback=cb;ol.classList.add('active');}
+function selPromo(p){document.getElementById('promoOverlay').classList.remove('active');if(promoCallback)promoCallback(p);promoCallback=null;}
+function buildSAN(mv,piece){const f='abcdefgh',p=piece[1],to=f[mv.tc]+(8-mv.tr);if(mv.castle==='K')return'O-O';if(mv.castle==='Q')return'O-O-O';let san=p!=='P'?p:'';if(p==='P'&&mv.fc!==mv.tc)san+=f[mv.fc];if(board[mv.tr][mv.tc]||p==='P'&&mv.fc!==mv.tc)san+='x';san+=to;if(mv.promo&&mv.promoTo)san+='='+mv.promoTo;return san;}
+function getPseudo(r,c,b,ep,cr){const p=b[r][c];if(!p)return[];const col=p[0],tp=p[1],mvs=[],dir=col==='w'?-1:1,sr=col==='w'?6:1,pr=col==='w'?0:7;const add=(tr,tc,x={})=>mvs.push({fr:r,fc:c,tr,tc,...x});const inB=(r,c)=>r>=0&&r<8&&c>=0&&c<8;const isEn=(r,c)=>inB(r,c)&&b[r][c]&&b[r][c][0]!==col;const isEm=(r,c)=>inB(r,c)&&!b[r][c];if(tp==='P'){if(isEm(r+dir,c)){r+dir===pr?add(r+dir,c,{promo:true}):add(r+dir,c);if(r===sr&&isEm(r+2*dir,c))add(r+2*dir,c);}for(const dc of[-1,1]){if(isEn(r+dir,c+dc))r+dir===pr?add(r+dir,c+dc,{promo:true}):add(r+dir,c+dc);if(ep&&r+dir===ep.r&&c+dc===ep.c)add(r+dir,c+dc,{enPassant:true});}}if(tp==='N')[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(inB(nr,nc)&&(!b[nr][nc]||b[nr][nc][0]!==col))add(nr,nc);});if(tp==='B'||tp==='Q')[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;while(inB(nr,nc)){if(!b[nr][nc]){add(nr,nc);nr+=dr;nc+=dc;}else{if(b[nr][nc][0]!==col)add(nr,nc);break;}}});if(tp==='R'||tp==='Q')[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;while(inB(nr,nc)){if(!b[nr][nc]){add(nr,nc);nr+=dr;nc+=dc;}else{if(b[nr][nc][0]!==col)add(nr,nc);break;}}});if(tp==='K'){[[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(inB(nr,nc)&&(!b[nr][nc]||b[nr][nc][0]!==col))add(nr,nc);});if(cr){if(cr[col+'K']&&isEm(r,5)&&isEm(r,6)&&!isInCheck(col,b,cr)&&!sqAtk(r,5,col,b)&&!sqAtk(r,6,col,b))add(r,6,{castle:'K'});if(cr[col+'Q']&&isEm(r,3)&&isEm(r,2)&&isEm(r,1)&&!isInCheck(col,b,cr)&&!sqAtk(r,3,col,b)&&!sqAtk(r,2,col,b))add(r,2,{castle:'Q'});}}return mvs;}
+function isInCheck(col,b,cr){let kr=-1,kc=-1;for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]===col+'K'){kr=r;kc=c;}if(kr===-1)return false;return sqAtk(kr,kc,col,b);}
+function sqAtk(r,c,col,b){const op=col==='w'?'b':'w';for(let fr=0;fr<8;fr++)for(let fc=0;fc<8;fc++)if(b[fr][fc]&&b[fr][fc][0]===op){const ms=getPseudo(fr,fc,b,null,null);if(ms.some(m=>m.tr===r&&m.tc===c))return true;}return false;}
+function applyMv(mv,b,ep,cr){const nb=b.map(r=>[...r]),ncr={...cr};const piece=nb[mv.fr][mv.fc],col=piece[0];nb[mv.tr][mv.tc]=piece;nb[mv.fr][mv.fc]=null;if(mv.enPassant)nb[mv.tr+(col==='w'?1:-1)][mv.tc]=null;if(mv.castle==='K'){nb[mv.fr][5]=col+'R';nb[mv.fr][7]=null;}if(mv.castle==='Q'){nb[mv.fr][3]=col+'R';nb[mv.fr][0]=null;}if(mv.promo)nb[mv.tr][mv.tc]=col+(mv.promoTo||'Q');if(piece[1]==='K'){ncr[col+'K']=false;ncr[col+'Q']=false;}if(piece[1]==='R'&&mv.fc===7)ncr[col+'K']=false;if(piece[1]==='R'&&mv.fc===0)ncr[col+'Q']=false;const nep=(piece[1]==='P'&&Math.abs(mv.tr-mv.fr)===2)?{r:(mv.fr+mv.tr)/2,c:mv.tc}:null;return{b:nb,ep:nep,cr:ncr};}
+function getLegalMoves(r,c){const p=board[r][c];if(!p)return[];const col=p[0];return getPseudo(r,c,board,enPassant,castleRights).filter(mv=>{const{b:nb,cr:ncr}=applyMv(mv,board,enPassant,castleRights);return!isInCheck(col,nb,ncr);});}
+function getAllLegal(col,b,ep,cr){const all=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]&&b[r][c][0]===col){getPseudo(r,c,b,ep,cr).forEach(mv=>{const{b:nb,ep:nep,cr:ncr}=applyMv(mv,b,ep,cr);if(!isInCheck(col,nb,ncr))all.push(mv);});}return all;}
+function hasAnyLegal(col){return getAllLegal(col,board,enPassant,castleRights).length>0;}
+function evalBoard(b){let s=0;const T={P:[[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],[5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],[5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]],N:[[-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],[-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],[-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],[-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]],B:[[-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,10,10,5,0,-10],[-10,5,5,10,10,5,5,-10],[-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],[-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]],R:[[0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]],Q:[[-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,5,5,5,0,-10],[-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],[-10,5,5,5,5,5,0,-10],[-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]],K:[[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],[20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]]};for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=b[r][c];if(!p)continue;const col=p[0],tp=p[1],v=PV[tp]*100,tr=col==='w'?r:7-r,bon=T[tp]?T[tp][tr][c]:0;s+=col==='w'?v+bon:-(v+bon);}return s;}
+function minimax(b,ep,cr,depth,a,be,max){const col=max?'w':'b',ms=getAllLegal(col,b,ep,cr);if(depth===0||ms.length===0){const e=evalBoard(b);if(ms.length===0)return isInCheck(col,b,cr)?(max?-30000+depth:30000-depth):0;return e;}let best=max?-Infinity:Infinity;for(const mv of ms){const{b:nb,ep:nep,cr:ncr}=applyMv(mv,b,ep,cr);const sc=minimax(nb,nep,ncr,depth-1,a,be,!max);if(max){best=Math.max(best,sc);a=Math.max(a,sc);}else{best=Math.min(best,sc);be=Math.min(be,sc);}if(be<=a)break;}return best;}
+function aiMove(){if(gameOver)return;const ms=getAllLegal('b',board,enPassant,castleRights);if(!ms.length)return;let bestMv=ms[0],bestSc=Infinity;for(const mv of ms){if(mv.promo)mv.promoTo='Q';const{b:nb,ep:nep,cr:ncr}=applyMv(mv,board,enPassant,castleRights);const sc=minimax(nb,nep,ncr,aiDepth-1,-Infinity,Infinity,true);if(sc<bestSc){bestSc=sc;bestMv=mv;}}if(bestMv.promo)bestMv.promoTo='Q';doMove(bestMv,true);}
+function updateEvalAsync(){setTimeout(()=>{const e=evalBoard(board);updateEval(e);updateAnalysis(e);updateSignals(e);},10);}
+function updateEval(sc){const pct=Math.max(5,Math.min(95,50-sc/20));document.getElementById('evalFill').style.height=pct+'%';const s=(sc/100).toFixed(1);document.getElementById('evalText').textContent=sc>0?'+'+s:s;let desc='равновесие';if(Math.abs(sc)>300)desc=sc>0?'белые лучше':'чёрные лучше';if(Math.abs(sc)>700)desc=sc>0?'белые выигрывают':'чёрные выигрывают';document.getElementById('evalDisp').textContent=(sc>0?'+':'')+s+' — '+desc;}
+function updateAnalysis(e){const col=currentTurn,ms=getAllLegal(col,board,enPassant,castleRights);if(ms.length>0){let bm=ms[0],bs=col==='w'?-Infinity:Infinity;for(const mv of ms.slice(0,8)){if(mv.promo)mv.promoTo='Q';const{b:nb,ep:nep,cr:ncr}=applyMv(mv,board,enPassant,castleRights);const sc=minimax(nb,nep,ncr,1,-Infinity,Infinity,col==='b');if((col==='w'&&sc>bs)||(col==='b'&&sc<bs)){bs=sc;bm=mv;}}const f='abcdefgh';document.getElementById('bestLine').textContent=f[bm.fc]+(8-bm.fr)+'→'+f[bm.tc]+(8-bm.tr);}const t=moves.length;let pt='Дебют';if(t>20)pt='Миттельшпиль';if(t>40)pt='Эндшпиль';document.getElementById('posType').textContent=pt;updateOpeningName();}
+function updateOpeningName(){const s=moves.map(m=>m.san).join(' ');let matched='';for(const[k,n]of Object.entries(OPENINGS))if(s.startsWith(k)&&k.length>matched.length)matched=n;document.getElementById('openingName').textContent=matched;}
+function updateSignals(e){const abs=Math.abs(e);const s1=abs<200?'green':abs<500?'yellow':'red';const s2=moves.length<5?'green':moves.length<20?'yellow':'green';const sig=document.getElementById('signalStrip');sig.innerHTML=`<div class="signal ${s1}">Позиция: ${abs<200?'норма':abs<500?'внимание':'алерт'}</div><div class="signal ${s2}">Ходов: ${moves.length}</div><div class="signal ${isInCheck(currentTurn,board,castleRights)?'red':'green'}">${isInCheck(currentTurn,board,castleRights)?'⚠ Шах':'Шах: нет'}</div>`;}
+function setKiorInsight(phase){const msgs=KIOR_MSGS[phase]||KIOR_MSGS.opening;const msg=msgs[Math.floor(Math.random()*msgs.length)];document.getElementById('kiorInsight').innerHTML=`<strong>КИОР-интерпретация</strong>${msg}`;}
+function renderMoves(){const log=document.getElementById('moveLog');log.innerHTML='';for(let i=0;i<moves.length;i+=2){const row=document.createElement('div');row.className='mv-pair';row.innerHTML=`<span class="mv-num">${i/2+1}.</span><span class="mv-san${i===moves.length-1||i===moves.length-2?' cur':''}">${moves[i].san}</span><span class="mv-san${i+1===moves.length-1?' cur':''}">${moves[i+1]?moves[i+1].san:''}</span>`;log.appendChild(row);}log.scrollTop=log.scrollHeight;}
+function updateCaptured(){const sym={P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛'};document.getElementById('cap1').textContent=captured.w.map(p=>sym[p]||p).join('');document.getElementById('cap2').textContent=captured.b.map(p=>sym[p]||p).join('');const wv=captured.w.reduce((s,p)=>s+(PV[p]||0),0),bv=captured.b.reduce((s,p)=>s+(PV[p]||0),0);document.getElementById('diff1').textContent=wv>bv?`+${wv-bv}`:'';document.getElementById('diff2').textContent=bv>wv?`+${bv-wv}`:'`;}
+function updateStatus(){if(gameOver)return;const inCh=isInCheck(currentTurn,board,castleRights),t=currentTurn==='w'?'Белые':'Чёрные';if(inCh)setStatus(`${t} под шахом!`,'check');else setStatus(`${t} ходят`);document.getElementById('p1card').classList.toggle('timer-active',currentTurn==='w');document.getElementById('p2card').classList.toggle('timer-active',currentTurn==='b');}
+function setStatus(msg,type=''){const el=document.getElementById('statusBar');el.textContent=msg;el.className='status-bar '+type;}
+function startTimer(){if(!timeControl)return;timerInterval=setInterval(()=>{timers[currentTurn]--;if(timers[currentTurn]<=0){timers[currentTurn]=0;stopTimer();gameOver=true;setStatus(`Время истекло! ${currentTurn==='w'?'Чёрные':'Белые'} победили!`,'end');}updateTimers();},1000);}
+function stopTimer(){clearInterval(timerInterval);}
+function updateTimers(){const fmt=s=>{const m=Math.floor(s/60),sec=s%60;return`${m}:${sec.toString().padStart(2,'0')}`;};document.getElementById('timer1').textContent=timeControl===0?'∞':fmt(timers.w);document.getElementById('timer2').textContent=timeControl===0?'∞':fmt(timers.b);document.getElementById('timer1').parentElement.classList.toggle('timer-low',timers.w<30&&timeControl>0);document.getElementById('timer2').parentElement.classList.toggle('timer-low',timers.b<30&&timeControl>0);}
+function undoMove(){if(!moves.length)return;const toUndo=gameMode==='ai'?2:1;const saved=moves.slice(0,Math.max(0,moves.length-toUndo));initBoard();saved.forEach(mv=>{if(mv.mv.promo&&!mv.mv.promoTo)mv.mv.promoTo='Q';doMove(mv.mv,true);});}
+function resign(){if(gameOver){newGame();return;}const l=currentTurn==='w'?'Белые':'Чёрные',w=currentTurn==='w'?'Чёрные':'Белые';gameOver=true;stopTimer();setStatus(`${l} сдались. ${w} победили!`,'end');}
+function setMode(mode){gameMode=mode;document.querySelectorAll('.mode-opt').forEach(el=>el.classList.toggle('active',el.dataset.mode===mode));if(mode==='ai'){document.getElementById('p2org').textContent='НПИИ · H200';document.getElementById('p2name').textContent='Система SDU';document.getElementById('p2role').textContent='Аналитический движок';}else{document.getElementById('p2org').textContent='МКИ РК · ЗПМ';document.getElementById('p2name').textContent='Игрок 2';document.getElementById('p2role').textContent='Заместитель Премьера';}newGame();}
+function updateDepthSel(v){aiDepth=parseInt(v);}
+function setTime(s){timeControl=s;timers={w:s,b:s};updateTimers();stopTimer();timerOn=false;document.querySelectorAll('.time-btn').forEach(b=>{const val=b.textContent==='∞'?0:parseInt(b.textContent)*60;b.classList.toggle('active',val===s);});}
+function switchTab(tab){document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['moves','analysis'][i]===tab));document.querySelectorAll('.panel').forEach(el=>el.classList.toggle('active',el.id==='panel-'+tab));}
+initBoard();
+</script>
+</body>
+</html>
